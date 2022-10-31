@@ -129,6 +129,5 @@ bool Address::operator==(const Address &other) const {
     if (_size != other._size) {
         return false;
     }
-
     return 0 == memcmp(&_address, &other._address, _size);
 }
