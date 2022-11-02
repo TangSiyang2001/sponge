@@ -28,7 +28,6 @@ void get_URL(const string &host, const string &path) {
         std::cout<<tcp_socket.read();
     }
     tcp_socket.close();
-    std::cout<<"closed";
 }
 
 int main(int argc, char *argv[]) {
