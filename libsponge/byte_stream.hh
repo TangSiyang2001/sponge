@@ -22,7 +22,7 @@ class ByteStream {
     // that's a sign that you probably want to keep exploring
     // different approaches.
 
-    //!Here we implement a ring buffer.
+    //!Here I implement a ring buffer.
 
     size_t _capicity;
 

@@ -46,7 +46,7 @@ size_t ByteStream::write(const std::string &data) {
     const byte *start = data.c_str();
     const size_t len_to_end = _len_to_end(_write_idx);
     if (_write_idx >= _read_idx && len_to_end < write_len) {
-        // split to two parts
+        // split into two parts
 
         memcpy(write_pos, start, len_to_end);
         const byte *half = start + len_to_end;
