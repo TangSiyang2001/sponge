@@ -17,8 +17,16 @@ class StreamReassembler {
     size_t _capacity;    //!< The maximum number of bytes
     uint64_t _eof_idx;
     uint64_t _next_idx;
+    // use rb tree to orderly manage bytes by idx
     std::map<uint64_t, std::string> _unreassembled_strs;
-    size_t unreassembled_size;
+    size_t _n_unreassembled_bytes;
+
+  private:
+    void _write(const uint64_t index, const std::string &data);
+
+    void _push_to_unreassemblered(const uint64_t index, const std::string &data);
+
+    void _evict_expired();
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
