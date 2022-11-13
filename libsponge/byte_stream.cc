@@ -37,6 +37,9 @@ ByteStream::ByteStream(const size_t capacity)
     , _error(false) {}
 
 size_t ByteStream::write(const std::string &data) {
+    if (_is_ended) {
+        return 0;
+    }
     const size_t len = data.length();
     if (len == 0) {
         return 0;

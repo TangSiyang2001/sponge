@@ -4,8 +4,11 @@
 #include "byte_stream.hh"
 
 #include <cstdint>
+#include <iterator>
 #include <map>
 #include <string>
+
+using MAP_IDX_STR = std::map<uint64_t, std::string>;
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
@@ -18,13 +21,15 @@ class StreamReassembler {
     uint64_t _eof_idx;
     uint64_t _next_idx;
     // use rb tree to orderly manage bytes by idx
-    std::map<uint64_t, std::string> _unreassembled_strs;
+    MAP_IDX_STR _unreassembled_strs;
     size_t _n_unreassembled_bytes;
 
   private:
-    void _write(const uint64_t index, const std::string &data);
+    void _try_write(const std::string &data);
 
     void _push_to_unreassemblered(const uint64_t index, const std::string &data);
+
+    void _do_push_to_unreassemblered(const uint64_t index, const std::string &data);
 
     void _evict_expired();
 
@@ -59,6 +64,37 @@ class StreamReassembler {
     //! \brief Is the internal state empty (other than the output stream)?
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
+};
+
+struct CombinationDiscriptor {
+    /*
+     * Description of stream
+     *
+     *                    data
+     *               +-------------+
+     *     |------------|       |---------------|
+     *  l_lower      r_lower  l_upper      r_upper
+     *
+     *
+     *  should be careful with that case:
+     *                                data
+     *              +------------------------------------+
+     *      |--------------|     |------------------|  ...  |-----------------|
+     *   l_lower  lower r_lower l_upper   upper   r_upper  l_upper_r upper_r r_upper_r
+     */
+    uint64_t l_lower_idx = -1;
+    uint64_t r_lower_idx = -1;
+    uint64_t l_upper_idx = -1;
+    uint64_t r_upper_idx = -1;
+    uint64_t left_idx = -1;
+    uint64_t right_idx = -1;
+    MAP_IDX_STR::iterator lower_it;
+    MAP_IDX_STR::iterator upper_it;
+    // might not exsist if r_upper >= data_end_idx
+    uint64_t l_upper_r_idx = -1;
+    uint64_t r_upper_r_idx = -1;
+
+    CombinationDiscriptor(MAP_IDX_STR map) : lower_it(map.end()), upper_it(map.end()) {}
 };
 
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
