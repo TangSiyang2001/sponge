@@ -23,15 +23,20 @@ class StreamReassembler {
     // use rb tree to orderly manage bytes by idx
     MAP_IDX_STR _unreassembled_strs;
     size_t _n_unreassembled_bytes;
+    bool _eof;
 
   private:
-    void _try_write(const std::string &data);
+    size_t _try_write(const std::string &data);
 
     void _push_to_unreassemblered(const uint64_t index, const std::string &data);
 
     void _do_push_to_unreassemblered(const uint64_t index, const std::string &data);
 
-    void _evict_expired();
+    void _manage_eof();
+
+    void _try_poll_unreassemblered();
+
+    void _rm_from_unreassemblered(MAP_IDX_STR::iterator it);
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
@@ -76,7 +81,7 @@ struct CombinationDiscriptor {
      *  l_lower      r_lower  l_upper      r_upper
      *
      *
-     *  should be careful with that case:
+     *  should be careful with the multiple upper case:
      *                                data
      *              +------------------------------------+
      *      |--------------|     |------------------|  ...  |-----------------|
@@ -90,9 +95,6 @@ struct CombinationDiscriptor {
     uint64_t right_idx = -1;
     MAP_IDX_STR::iterator lower_it;
     MAP_IDX_STR::iterator upper_it;
-    // might not exsist if r_upper >= data_end_idx
-    uint64_t l_upper_r_idx = -1;
-    uint64_t r_upper_r_idx = -1;
 
     CombinationDiscriptor(MAP_IDX_STR map) : lower_it(map.end()), upper_it(map.end()) {}
 };
