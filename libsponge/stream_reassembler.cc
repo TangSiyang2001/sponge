@@ -40,9 +40,6 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
 
     _inbound(input, index);
     _pop_buffer();
-    if (_n_unreasemble == 1) {
-        // std::cout<<"first::"<<_buffer.begin()->first<<" sec"<<_buffer.begin()->second<<std::endl;
-    }
     if (_first_unreasemble_idx >= _eof_idx) {
         _output.end_input();
     }
