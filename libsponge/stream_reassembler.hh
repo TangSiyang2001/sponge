@@ -3,40 +3,45 @@
 
 #include "byte_stream.hh"
 
+#include <algorithm>
 #include <cstdint>
-#include <iterator>
 #include <map>
 #include <string>
 
-using MAP_IDX_STR = std::map<uint64_t, std::string>;
-
+using MAP_IDX_STR = std::map<size_t, std::string>;
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
+//  |------read---------||----output------|   |--buffer--|
+//!                      |---------- capicity--------------|
+//! |--------------------|----------------|---------------------|------------------>
+//! begin            write_idx  _first_unreasemble_idx      unreach_idx
 class StreamReassembler {
   private:
-    // Your code here -- add private members as necessary.
+    std::map<uint64_t, std::string> _buffer;
 
+    uint64_t _first_unreasemble_idx;
+    // idx of the first unreachable byte
+    uint64_t _unreachable_idx;
+    // the last
+    uint64_t _eof_idx;
+    // true if eof is passed in
+    bool _eof;
+    size_t _n_unreasemble;
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
-    uint64_t _eof_idx;
-    uint64_t _next_idx;
-    // use rb tree to orderly manage bytes by idx
-    MAP_IDX_STR _unreassembled_strs;
-    size_t _n_unreassembled_bytes;
-    bool _eof;
 
   private:
-    size_t _try_write(const std::string &data);
+    void _inbound(const std::string &data, const uint64_t index);
 
-    void _push_to_unreassemblered(const uint64_t index, const std::string &data);
+    void _push_buffer(const std::string &data, const uint64_t index);
 
-    void _do_push_to_unreassemblered(const uint64_t index, const std::string &data);
+    void _do_push_buffer(const std::string &data, const uint64_t index);
 
-    void _manage_eof();
+    void _pop_buffer();
 
-    void _try_poll_unreassemblered();
+    std::string _do_pop_buffer(const uint64_t index);
 
-    void _rm_from_unreassemblered(MAP_IDX_STR::iterator it);
+    std::string _do_pop_buffer(MAP_IDX_STR::iterator it);
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
@@ -69,34 +74,6 @@ class StreamReassembler {
     //! \brief Is the internal state empty (other than the output stream)?
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
-};
-
-struct CombinationDiscriptor {
-    /*
-     * Description of stream
-     *
-     *                    data
-     *               +-------------+
-     *     |------------|       |---------------|
-     *  l_lower      r_lower  l_upper      r_upper
-     *
-     *
-     *  should be careful with the multiple upper case:
-     *                                data
-     *              +------------------------------------+
-     *      |--------------|     |------------------|  ...  |-----------------|
-     *   l_lower  lower r_lower l_upper   upper   r_upper  l_upper_r upper_r r_upper_r
-     */
-    uint64_t l_lower_idx = -1;
-    uint64_t r_lower_idx = -1;
-    uint64_t l_upper_idx = -1;
-    uint64_t r_upper_idx = -1;
-    uint64_t left_idx = -1;
-    uint64_t right_idx = -1;
-    MAP_IDX_STR::iterator lower_it;
-    MAP_IDX_STR::iterator upper_it;
-
-    CombinationDiscriptor(MAP_IDX_STR map) : lower_it(map.end()), upper_it(map.end()) {}
 };
 
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH

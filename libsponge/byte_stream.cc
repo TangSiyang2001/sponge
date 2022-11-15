@@ -42,6 +42,7 @@ size_t ByteStream::write(const std::string &data) {
     }
     const size_t len = data.length();
     if (len == 0) {
+        _bytes_written += 1;
         return 0;
     }
     size_t write_len = std::min(len, remaining_capacity());
