@@ -12,7 +12,7 @@ using MAP_IDX_STR = std::map<size_t, std::string>;
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
 //  |------read---------||----output------|   |--buffer--|
-//!                      |---------- capicity--------------|
+//!                      |----------------capicity--------------|
 //! |--------------------|----------------|---------------------|------------------>
 //! begin            write_idx  _first_unreasemble_idx      unreach_idx
 class StreamReassembler {
