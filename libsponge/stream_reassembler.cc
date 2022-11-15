@@ -1,7 +1,6 @@
 #include "stream_reassembler.hh"
 
 #include <cassert>
-
 // Dummy implementation of a stream reassembler.
 
 // For Lab 1, please replace with a real implementation that passes the
@@ -44,7 +43,9 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
 
     _inbound(input, index);
     _pop_buffer();
-
+    if (_n_unreasemble == 1) {
+        // std::cout<<"first::"<<_buffer.begin()->first<<" sec"<<_buffer.begin()->second<<std::endl;
+    }
     if (_first_unreasemble_idx >= _eof_idx) {
         _output.end_input();
     }
@@ -79,45 +80,35 @@ void StreamReassembler::_inbound(const std::string &data, const uint64_t index) 
 }
 
 void StreamReassembler::_push_buffer(const std::string &data, const uint64_t index) {
-    auto it = _buffer.lower_bound(index);
+    auto upper_it = _buffer.lower_bound(index);
     std::string input = data;
     uint64_t start_idx = index;
     uint64_t data_end = index + data.size();
-    if (it != _buffer.end() && it->first < data_end) {
-        if (it->first >= data_end) {
-            return;
-        }
-        bool no_lower = (it->first == start_idx);
-        input = std::string(std::move(input.substr(0, it->first - start_idx)));
-        auto tmp_it = it;
-        auto prev = tmp_it;
-        auto next = ++tmp_it;
-        uint64_t read_idx = prev->first + prev->second.size();
-
-        for (; next != _buffer.end() && next->first < data_end; prev = next++) {
-            uint64_t prev_end = prev->first + prev->second.size();
-            read_idx = next->first + next->second.size();
-            if (prev_end != next->first) {
-                _do_push_buffer(data.substr(prev_end - index, next->first - prev_end), prev_end);
-            }
-        }
-        if (read_idx < data_end) {
-            _do_push_buffer(data.substr(read_idx - index), read_idx);
-        }
-        if (no_lower) {
-            return;
-        }
-    }
-    if (it != _buffer.begin()) {
-        auto tmp_it = it;
+    bool has_lower = (upper_it != _buffer.begin());
+    if (has_lower) {
+        auto tmp_it = upper_it;
         --tmp_it;
         uint64_t lower_end = tmp_it->first + tmp_it->second.size();
-        if (lower_end > index) {
-            if (lower_end >= index + input.size()) {
+        if (lower_end > start_idx) {
+            if (lower_end >= start_idx + input.size()) {
                 return;
             }
             input = input.substr(lower_end - start_idx);
             start_idx = lower_end;
+        }
+    }
+    if (upper_it != _buffer.end() && upper_it->first < data_end) {
+        if (upper_it->first == start_idx && upper_it->first + upper_it->second.size() >= data_end) {
+            return;
+        }
+        auto it = upper_it;
+        while (it != _buffer.end() && it->first + it->second.size() <= data_end) {
+            auto tmp = it;
+            ++it;
+            _do_pop_buffer(tmp);
+        }
+        if (it != _buffer.end() && it->first < data_end) {
+            input = std::string(std::move(input.substr(0, it->first - start_idx)));
         }
     }
     _do_push_buffer(input, start_idx);
@@ -150,8 +141,8 @@ std::string StreamReassembler::_do_pop_buffer(uint64_t index) {
 
 std::string StreamReassembler::_do_pop_buffer(MAP_IDX_STR::iterator it) {
     if (it != _buffer.end()) {
-        std::string tmp = it->second;
-        _n_unreasemble -= it->second.size();
+        std::string tmp = std::string(std::move(it->second));
+        _n_unreasemble -= tmp.size();
         _buffer.erase(it);
         return tmp;
     }
