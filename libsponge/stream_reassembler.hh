@@ -17,7 +17,7 @@ using MAP_IDX_STR = std::map<size_t, std::string>;
 //! begin            write_idx  _first_unreasemble_idx      unreach_idx
 class StreamReassembler {
   private:
-    std::map<uint64_t, std::string> _buffer;
+    std::map<uint64_t, std::string> _window;
 
     uint64_t _first_unreasemble_idx;
     // idx of the first unreachable byte

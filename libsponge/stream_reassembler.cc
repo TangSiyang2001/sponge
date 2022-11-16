@@ -11,7 +11,7 @@
 using namespace std;
 
 StreamReassembler::StreamReassembler(const size_t capacity)
-    : _buffer()
+    : _window()
     , _first_unreasemble_idx(0)
     , _unreachable_idx(-1)
     , _eof_idx(-1)
@@ -56,8 +56,8 @@ void StreamReassembler::_inbound(const std::string &data, const uint64_t index) 
         }
         real_idx = _first_unreasemble_idx;
         input = std::string(std::move(input.substr(real_idx - index)));
-        auto it = _buffer.lower_bound(real_idx);
-        if (it != _buffer.end() && it->first < real_idx + input.size()) {
+        auto it = _window.lower_bound(real_idx);
+        if (it != _window.end() && it->first < real_idx + input.size()) {
             const uint64_t split_pot = it->first - real_idx;
             std::string tmp = input;
             input = tmp.substr(0, split_pot);
@@ -74,12 +74,12 @@ void StreamReassembler::_inbound(const std::string &data, const uint64_t index) 
 }
 
 void StreamReassembler::_push_buffer(const std::string &data, const uint64_t index) {
-    auto upper_it = _buffer.lower_bound(index);
+    auto upper_it = _window.lower_bound(index);
     std::string input = data;
     uint64_t start_idx = index;
     uint64_t data_end = index + data.size();
-    bool has_lower = (upper_it != _buffer.begin());
-    if (has_lower) {
+
+    if (upper_it != _window.begin()) {
         auto tmp_it = upper_it;
         --tmp_it;
         uint64_t lower_end = tmp_it->first + tmp_it->second.size();
@@ -87,21 +87,33 @@ void StreamReassembler::_push_buffer(const std::string &data, const uint64_t ind
             if (lower_end >= start_idx + input.size()) {
                 return;
             }
+            // lower part overlap
+            //  |+++++++++ (input)
+            //|----| (unreasemble)
             input = input.substr(lower_end - start_idx);
             start_idx = lower_end;
         }
     }
-    if (upper_it != _buffer.end() && upper_it->first < data_end) {
+    if (upper_it != _window.end() && upper_it->first < data_end) {
         if (upper_it->first == start_idx && upper_it->first + upper_it->second.size() >= data_end) {
+            // fully overlap
+            //|+++++++++| (input)
+            //|-----------| (unreasemble)
             return;
         }
         auto it = upper_it;
-        while (it != _buffer.end() && it->first + it->second.size() <= data_end) {
+        while (it != _window.end() && it->first + it->second.size() <= data_end) {
+            //multi overlap
+            //|++++++++++++++++ (input)
+            //    |---| |---| (unreasemble to be remove)
             auto tmp = it;
             ++it;
             _do_pop_buffer(tmp);
         }
-        if (it != _buffer.end() && it->first < data_end) {
+        if (it != _window.end() && it->first < data_end) {
+            //upper overlap
+            //++++++++++| (input)
+            //        |----| (unreasemble)
             input = std::string(std::move(input.substr(0, it->first - start_idx)));
         }
     }
@@ -109,13 +121,13 @@ void StreamReassembler::_push_buffer(const std::string &data, const uint64_t ind
 }
 
 void StreamReassembler::_do_push_buffer(const std::string &data, const uint64_t index) {
-    _buffer[index] = data;
+    _window[index] = data;
     _n_unreasemble += data.size();
 }
 
 void StreamReassembler::_pop_buffer() {
-    auto next_it = _buffer.end();
-    for (auto it = _buffer.begin(); it != _buffer.end() && it->first == _first_unreasemble_idx; it = next_it) {
+    auto next_it = _window.end();
+    for (auto it = _window.begin(); it != _window.end() && it->first == _first_unreasemble_idx; it = next_it) {
         uint64_t index = it->first;
         next_it = it;
         ++next_it;
@@ -129,15 +141,15 @@ void StreamReassembler::_pop_buffer() {
 }
 
 std::string StreamReassembler::_do_pop_buffer(uint64_t index) {
-    auto it = _buffer.find(index);
+    auto it = _window.find(index);
     return _do_pop_buffer(it);
 }
 
 std::string StreamReassembler::_do_pop_buffer(MAP_IDX_STR::iterator it) {
-    if (it != _buffer.end()) {
+    if (it != _window.end()) {
         std::string tmp = std::string(std::move(it->second));
         _n_unreasemble -= tmp.size();
-        _buffer.erase(it);
+        _window.erase(it);
         return tmp;
     }
     return "";
