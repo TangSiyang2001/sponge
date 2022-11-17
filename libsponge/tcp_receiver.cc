@@ -6,14 +6,12 @@
 // automated checks run by `make check_lab2`.
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
-void TCPReceiver::segment_received(const TCPSegment &seg) {
-    DUMMY_CODE(seg);
-}
+void TCPReceiver::segment_received(const TCPSegment &seg) { DUMMY_CODE(seg); }
 
-optional<WrappingInt32> TCPReceiver::ackno() const { return {}; }
+std::optional<WrappingInt32> TCPReceiver::ackno() const { return {}; }
 
 size_t TCPReceiver::window_size() const { return {}; }
