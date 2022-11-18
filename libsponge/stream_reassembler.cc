@@ -8,8 +8,6 @@
 
 // You will need to add private members to the class declaration in `stream_reassembler.hh`
 
-using namespace std;
-
 StreamReassembler::StreamReassembler(const size_t capacity)
     : _window()
     , _first_unreasemble_idx(0)
@@ -23,7 +21,7 @@ StreamReassembler::StreamReassembler(const size_t capacity)
 //! \details This function accepts a substring (aka a segment) of bytes,
 //! possibly out-of-order, from the logical stream, and assembles any newly
 //! contiguous substrings and writes them into the output stream in order.
-void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
+void StreamReassembler::push_substring(const std::string &data, const size_t index, const bool eof) {
     // caveat: We should treat data.length() == 0 as a byte nomally.
     _pop_buffer();
     const size_t data_len = data.size();
@@ -103,17 +101,17 @@ void StreamReassembler::_push_buffer(const std::string &data, const uint64_t ind
         }
         auto it = upper_it;
         while (it != _window.end() && it->first + it->second.size() <= data_end) {
-            //multi overlap
+            // multi overlap
             //|++++++++++++++++ (input)
-            //    |---| |---| (unreasemble to be remove)
+            //     |---| |---| (unreasemble to be remove)
             auto tmp = it;
             ++it;
             _do_pop_buffer(tmp);
         }
         if (it != _window.end() && it->first < data_end) {
-            //upper overlap
+            // upper overlap
             //++++++++++| (input)
-            //        |----| (unreasemble)
+            //         |----| (unreasemble)
             input = std::string(std::move(input.substr(0, it->first - start_idx)));
         }
     }
