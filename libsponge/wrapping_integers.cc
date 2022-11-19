@@ -33,7 +33,6 @@ uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
         return offset;
     }
     // round up
-    uint64_t rcheckpoint = (checkpoint - offset) + (UINT32_RANGE >> 1);
-    uint64_t tmp = (rcheckpoint / UINT32_RANGE);
-    return offset + tmp * UINT32_RANGE;
+    checkpoint = (checkpoint - offset) + (UINT32_RANGE >> 1);
+    return offset + (checkpoint / UINT32_RANGE) * UINT32_RANGE;
 }
