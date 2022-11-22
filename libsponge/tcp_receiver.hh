@@ -8,6 +8,8 @@
 
 #include <optional>
 
+enum RecieverStat { LISTEN, SYN_RECV, FIN_RECV };
+
 //! \brief The "receiver" part of a TCP implementation.
 
 //! Receives and reassembles segments into a ByteStream, and computes
@@ -24,12 +26,15 @@ class TCPReceiver {
 
     WrappingInt32 _isn;
 
+    uint64_t _curr_stream_idx;
+
   public:
     //! \brief Construct a TCP receiver
     //!
     //! \param capacity the maximum number of bytes that the receiver will
     //!                 store in its buffers at any give time.
-    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity), _stat(LISTEN),_isn(0) {}
+    TCPReceiver(const size_t capacity)
+        : _reassembler(capacity), _capacity(capacity), _stat(LISTEN), _isn(0), _curr_stream_idx(0) {}
 
     //! \name Accessors to provide feedback to the remote TCPSender
     //!@{
@@ -66,7 +71,5 @@ class TCPReceiver {
     const ByteStream &stream_out() const { return _reassembler.stream_out(); }
     //!@}
 };
-
-enum RecieverStat { LISTEN, SYN_RECV, FIN_RECV };
 
 #endif  // SPONGE_LIBSPONGE_TCP_RECEIVER_HH

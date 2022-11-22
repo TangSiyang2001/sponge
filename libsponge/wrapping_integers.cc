@@ -8,7 +8,6 @@
 template <typename... Targs>
 void DUMMY_CODE(Targs &&.../* unused */) {}
 
-using namespace std;
 
 //! Transform an "absolute" 64-bit sequence number (zero-indexed) into a WrappingInt32
 //! \param n The input absolute 64-bit sequence number
