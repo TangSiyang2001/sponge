@@ -1,15 +1,11 @@
 #ifndef SPONGE_LIBSPONGE_BYTE_STREAM_HH
 #define SPONGE_LIBSPONGE_BYTE_STREAM_HH
 
-#include <cstring>
-#include <memory>
+#include <deque>
 #include <string>
 
-using byte = char;
-using ByteBuf = std::shared_ptr<byte>;
-using Iterator = byte *;
 //! \brief An in-order byte stream.
-
+using byte = char;
 //! Bytes are written on the "input" side and read from the "output"
 //! side.  The byte stream is finite: the writer can end the input,
 //! and then no more bytes can be written.
@@ -21,45 +17,12 @@ class ByteStream {
     // all, but if any of your tests are taking longer than a second,
     // that's a sign that you probably want to keep exploring
     // different approaches.
-
-    //!Here I implement a ring buffer.
-
-    size_t _capicity;
-
-    size_t _write_idx;
-
-    size_t _read_idx;
-
-    size_t _bytes_written;
-
-    size_t _bytes_read;
-
-    size_t _buffer_size;
-
-    ByteBuf _buffer;
-
-    bool _is_ended;
-
-    bool _error;  //!< Flag indicating that the stream suffered an error.
-
-  private:
-    inline void _check_idx(const size_t idx) const {
-        if (idx > _capicity - 1) {
-            throw std::length_error("Idx out of bound.");
-        }
-    }
-
-    Iterator _iterator(const size_t idx) const;
-
-    /**
-     * @brief calculate the length from idx to buffer array end
-     *
-     * @param idx cuurent idx
-     * @return size_t length
-     */
-    size_t _len_to_end(const size_t idx) const;
-
-    bool _need_to_ring(const size_t input_len) const;
+    std::deque<byte> _buffer;
+    size_t _capacity_size;
+    size_t _written_size;
+    size_t _read_size;
+    bool _end_input;
+    bool _error{};  //!< Flag indicating that the stream suffered an error.
 
   public:
     //! Construct a stream with room for `capacity` bytes.
